@@ -117,27 +117,27 @@ struct EigenMatrixFromPython {
     static void* convertible(PyObject* obj_ptr)
     {
         if (!PyArray_Check(obj_ptr)) {
-            LOG(ERROR) << "PyArray_Check failed";
+            DLOG(ERROR) << "PyArray_Check failed";
             return 0;
         }
 
         PyArrayObject* aspyarr = reinterpret_cast<PyArrayObject*>(obj_ptr);
 
         if (PyArray_NDIM(aspyarr) > 2) {
-            LOG(ERROR) << "dim > 2";
+            DLOG(ERROR) << "dim > 2";
             return 0;
         }
         if (PyArray_ObjectType(obj_ptr, 0) != NumpyEquivalentType<typename MatType::Scalar>::type_code) {
-            LOG(ERROR) << "types not compatible";
+            DLOG(ERROR) << "types not compatible";
             return 0;
         }
         int flags = PyArray_FLAGS(aspyarr);
         if (!(flags & NPY_ARRAY_C_CONTIGUOUS)) {
-            LOG(ERROR) << "Contiguous C array required";
+            DLOG(ERROR) << "Contiguous C array required";
             return 0;
         }
         if (!(flags & NPY_ARRAY_ALIGNED)) {
-            LOG(ERROR) << "Aligned array required";
+            DLOG(ERROR) << "Aligned array required";
             return 0;
         }
         return obj_ptr;
@@ -146,7 +146,7 @@ struct EigenMatrixFromPython {
     static void construct(PyObject* obj_ptr,
         bp::converter::rvalue_from_python_stage1_data* data)
     {
-        LOG(INFO) << "constructing";
+        DLOG(INFO) << "constructing";
         const int R = MatType::RowsAtCompileTime;
         const int C = MatType::ColsAtCompileTime;
 
@@ -157,50 +157,50 @@ struct EigenMatrixFromPython {
 
         int dtype_size = (PyArray_DESCR(array))->elsize;
         int s1 = PyArray_STRIDE(array, 0);
-        CHECK_EQ(0, s1 % dtype_size);
+        DCHECK_EQ(0, s1 % dtype_size);
         int s2 = 0;
         if (ndims > 1) {
             s2 = PyArray_STRIDE(array, 1);
-            CHECK_EQ(0, s2 % dtype_size);
+            DCHECK_EQ(0, s2 % dtype_size);
         }
-        LOG(INFO) << "ndims " << ndims;
+        DLOG(INFO) << "ndims " << ndims;
 
         int nrows = R;
         int ncols = C;
         if (ndims == 2) {
             if (R != Eigen::Dynamic) {
-                CHECK_EQ(R, PyArray_DIMS(array)[0]);
+                DCHECK_EQ(R, PyArray_DIMS(array)[0]);
             } else {
                 //                nrows = array->dimensions[0];
                 nrows = PyArray_DIMS(array)[0];
-                LOG(INFO) << "nrows " << nrows;
+                DLOG(INFO) << "nrows " << nrows;
             }
 
             if (C != Eigen::Dynamic) {
-                LOG(INFO) << "columns not dynamic";
-                CHECK_EQ(C, PyArray_DIMS(array)[1]);
+                DLOG(INFO) << "columns not dynamic";
+                DCHECK_EQ(C, PyArray_DIMS(array)[1]);
             } else {
                 //                ncols = array->dimensions[1];
                 ncols = PyArray_DIMS(array)[1];
-                LOG(INFO) << "nrows " << nrows;
+                DLOG(INFO) << "nrows " << nrows;
             }
         } else {
-            CHECK_EQ(1, ndims);
+            DCHECK_EQ(1, ndims);
             // Vector are a somehow special case because for Eigen, everything is
             // a 2D array with a dimension set to 1, but to numpy, vectors are 1D
             // arrays
             // So we could get a 1x4 array for a Vector4
 
             // For a vector, at least one of R, C must be 1
-            CHECK(R == 1 || C == 1);
+            DCHECK(R == 1 || C == 1);
 
             if (R == 1) {
                 if (C != Eigen::Dynamic) {
-                    CHECK_EQ(C, PyArray_DIMS(array)[0]);
+                    DCHECK_EQ(C, PyArray_DIMS(array)[0]);
                 } else {
                     //                    ncols = array->dimensions[0];
                     ncols = PyArray_DIMS(array)[0];
-                    LOG(INFO) << "nrows " << nrows;
+                    DLOG(INFO) << "nrows " << nrows;
                 }
                 // We have received a 1xC array and want to transform to VectorCd,
                 // so we need to transpose
@@ -209,20 +209,20 @@ struct EigenMatrixFromPython {
                 std::swap(s1, s2);
             } else {
                 if (R != Eigen::Dynamic) {
-                    CHECK_EQ(R, PyArray_DIMS(array)[0]);
+                    DCHECK_EQ(R, PyArray_DIMS(array)[0]);
                 } else {
                     //                    nrows = array->dimensions[0];
                     nrows = PyArray_DIMS(array)[0];
-                    LOG(INFO) << "nrows " << nrows;
+                    DLOG(INFO) << "nrows " << nrows;
                 }
             }
         }
 
-        LOG(INFO) << "aab";
+        DLOG(INFO) << "aab";
 
         T* raw_data = reinterpret_cast<T*>(PyArray_DATA(array));
 
-        CHECK(raw_data != nullptr) << "no ptr";
+        DCHECK(raw_data != nullptr) << "no ptr";
 
         typedef Map<Matrix<T, Dynamic, Dynamic, RowMajor>, Aligned, Stride<Dynamic, Dynamic>> MapType;
 
@@ -230,25 +230,25 @@ struct EigenMatrixFromPython {
 
         new (storage) MatType;
 
-        LOG(INFO) << "new";
+        DLOG(INFO) << "new";
         MatType* emat = (MatType*)storage;
         // TODO: This is a (potentially) expensive copy operation. There should
         // be a better way
-        LOG(INFO) << "ptr" << raw_data;
+        DLOG(INFO) << "ptr" << raw_data;
 
-        LOG(INFO) << "ncols " << nrows;
-        LOG(INFO) << "nrows " << ncols;
-        LOG(INFO) << "s1 " << s1;
-        LOG(INFO) << "s1 " << s2;
-        LOG(INFO) << "dtype_size " << dtype_size;
+        DLOG(INFO) << "ncols " << nrows;
+        DLOG(INFO) << "nrows " << ncols;
+        DLOG(INFO) << "s1 " << s1;
+        DLOG(INFO) << "s1 " << s2;
+        DLOG(INFO) << "dtype_size " << dtype_size;
 
         *emat = MapType(raw_data, nrows, ncols,
             Stride<Dynamic, Dynamic>(s1 / dtype_size, s2 / dtype_size));
 
-        LOG(INFO) << "copying";
+        DLOG(INFO) << "copying";
 
         data->convertible = storage;
-        LOG(INFO) << "done";
+        DLOG(INFO) << "done";
     }
 };
 
