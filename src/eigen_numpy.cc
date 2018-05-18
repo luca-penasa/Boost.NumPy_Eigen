@@ -359,20 +359,27 @@ SetupEigenConverters()
     MAT_CONV(2, 3, double);
     MAT_CONV(X, 3, double);
     MAT_CONV(X, 2, double);
-
     MAT_CONV(X, X, double);
     MAT_CONV(X, 1, double);
     MAT_CONV(1, 4, double);
     MAT_CONV(1, X, double);
     MAT_CONV(3, 4, double);
     MAT_CONV(3, X, double);
-
     MAT_CONV(2, X, double);
+
+    MAT_CONV(2, 3, size_t);
+    MAT_CONV(X, 3, size_t);
+    MAT_CONV(X, 2, size_t);
+    MAT_CONV(X, X, size_t);
+    MAT_CONV(X, 1, size_t);
+    MAT_CONV(1, 4, size_t);
+    MAT_CONV(1, X, size_t);
+    MAT_CONV(3, 4, size_t);
+    MAT_CONV(3, X, size_t);
+    MAT_CONV(2, X, size_t);
 
     MAT_CONV(2, 3, int);
     MAT_CONV(X, 3, int);
-    MAT_CONV(X, 3, size_t);
-
     MAT_CONV(X, X, int);
     MAT_CONV(X, 1, int);
     MAT_CONV(1, 4, int);
