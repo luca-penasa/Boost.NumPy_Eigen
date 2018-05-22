@@ -386,4 +386,8 @@ SetupEigenConverters()
     MAT_CONV(1, X, int);
     MAT_CONV(3, 4, int);
     MAT_CONV(2, X, int);
+
+#if PY_MAJOR_VERSION >= 3
+    return 1;
+#endif
 }
