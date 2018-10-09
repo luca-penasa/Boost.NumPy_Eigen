@@ -30,6 +30,10 @@ struct NumpyEquivalentType<double> {
     enum { type_code = NPY_DOUBLE };
 };
 template <>
+struct NumpyEquivalentType<bool> {
+    enum { type_code = NPY_BOOL };
+};
+template <>
 struct NumpyEquivalentType<int> {
     enum { type_code = NPY_INT };
 };
@@ -124,7 +128,7 @@ struct EigenMatrixFromPython {
         PyArrayObject* aspyarr = reinterpret_cast<PyArrayObject*>(obj_ptr);
 
         if (PyArray_NDIM(aspyarr) > 2) {
-            DLOG(ERROR) << "dim > 2";
+//            DLOG(ERROR) << "dim > 2";
             return 0;
         }
         if (PyArray_ObjectType(obj_ptr, 0) != NumpyEquivalentType<typename MatType::Scalar>::type_code) {
@@ -146,7 +150,7 @@ struct EigenMatrixFromPython {
     static void construct(PyObject* obj_ptr,
         bp::converter::rvalue_from_python_stage1_data* data)
     {
-        DLOG(INFO) << "constructing";
+//        DLOG(INFO) << "constructing";
         const int R = MatType::RowsAtCompileTime;
         const int C = MatType::ColsAtCompileTime;
 
@@ -163,7 +167,7 @@ struct EigenMatrixFromPython {
             s2 = PyArray_STRIDE(array, 1);
             DCHECK_EQ(0, s2 % dtype_size);
         }
-        DLOG(INFO) << "ndims " << ndims;
+//        DLOG(INFO) << "ndims " << ndims;
 
         int nrows = R;
         int ncols = C;
@@ -173,16 +177,16 @@ struct EigenMatrixFromPython {
             } else {
                 //                nrows = array->dimensions[0];
                 nrows = PyArray_DIMS(array)[0];
-                DLOG(INFO) << "nrows " << nrows;
+//                DLOG(INFO) << "nrows " << nrows;
             }
 
             if (C != Eigen::Dynamic) {
-                DLOG(INFO) << "columns not dynamic";
+//                DLOG(INFO) << "columns not dynamic";
                 DCHECK_EQ(C, PyArray_DIMS(array)[1]);
             } else {
                 //                ncols = array->dimensions[1];
                 ncols = PyArray_DIMS(array)[1];
-                DLOG(INFO) << "nrows " << nrows;
+//                DLOG(INFO) << "nrows " << nrows;
             }
         } else {
             DCHECK_EQ(1, ndims);
@@ -200,7 +204,7 @@ struct EigenMatrixFromPython {
                 } else {
                     //                    ncols = array->dimensions[0];
                     ncols = PyArray_DIMS(array)[0];
-                    DLOG(INFO) << "nrows " << nrows;
+//                    DLOG(INFO) << "nrows " << nrows;
                 }
                 // We have received a 1xC array and want to transform to VectorCd,
                 // so we need to transpose
@@ -213,12 +217,12 @@ struct EigenMatrixFromPython {
                 } else {
                     //                    nrows = array->dimensions[0];
                     nrows = PyArray_DIMS(array)[0];
-                    DLOG(INFO) << "nrows " << nrows;
+//                    DLOG(INFO) << "nrows " << nrows;
                 }
             }
         }
 
-        DLOG(INFO) << "aab";
+//        DLOG(INFO) << "aab";
 
         T* raw_data = reinterpret_cast<T*>(PyArray_DATA(array));
 
@@ -230,25 +234,25 @@ struct EigenMatrixFromPython {
 
         new (storage) MatType;
 
-        DLOG(INFO) << "new";
+//        DLOG(INFO) << "new";
         MatType* emat = (MatType*)storage;
         // TODO: This is a (potentially) expensive copy operation. There should
         // be a better way
-        DLOG(INFO) << "ptr" << raw_data;
+//        DLOG(INFO) << "ptr" << raw_data;
 
-        DLOG(INFO) << "ncols " << nrows;
-        DLOG(INFO) << "nrows " << ncols;
-        DLOG(INFO) << "s1 " << s1;
-        DLOG(INFO) << "s1 " << s2;
-        DLOG(INFO) << "dtype_size " << dtype_size;
+//        DLOG(INFO) << "ncols " << nrows;
+//        DLOG(INFO) << "nrows " << ncols;
+//        DLOG(INFO) << "s1 " << s1;
+//        DLOG(INFO) << "s1 " << s2;
+//        DLOG(INFO) << "dtype_size " << dtype_size;
 
         *emat = MapType(raw_data, nrows, ncols,
             Stride<Dynamic, Dynamic>(s1 / dtype_size, s2 / dtype_size));
 
-        DLOG(INFO) << "copying";
+//        DLOG(INFO) << "copying";
 
         data->convertible = storage;
-        DLOG(INFO) << "done";
+//        DLOG(INFO) << "done";
     }
 };
 
@@ -366,6 +370,17 @@ SetupEigenConverters()
     MAT_CONV(3, 4, double);
     MAT_CONV(3, X, double);
     MAT_CONV(2, X, double);
+
+    MAT_CONV(2, 3, bool);
+    MAT_CONV(X, 3, bool);
+    MAT_CONV(X, 2, bool);
+    MAT_CONV(X, X, bool);
+    MAT_CONV(X, 1, bool);
+    MAT_CONV(1, 4, bool);
+    MAT_CONV(1, X, bool);
+    MAT_CONV(3, 4, bool);
+    MAT_CONV(3, X, bool);
+    MAT_CONV(2, X, bool);
 
     MAT_CONV(2, 3, size_t);
     MAT_CONV(X, 3, size_t);
